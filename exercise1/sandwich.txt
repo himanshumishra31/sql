@@ -1,0 +1,183 @@
+CREATE TABLE tastes
+( name VARCHAR(10),
+  filling VARCHAR(10),
+  PRIMARY KEY (name,filling)
+);
+
+Query OK, 0 rows affected (0.02 sec)
+
+DESC tastes;
+
++---------+-------------+------+-----+---------+-------+
+| Field   | Type        | Null | Key | Default | Extra |
++---------+-------------+------+-----+---------+-------+
+| name    | varchar(10) | NO   | PRI | NULL    |       |
+| filling | varchar(10) | NO   | PRI | NULL    |       |
++---------+-------------+------+-----+---------+-------+
+2 rows in set (0.00 sec)
+
+INSERT INTO tastes
+VALUES ('Brown', 'Turkey'),
+        ('Brown', 'Beef'),
+        ('Brown', 'Ham'),
+        ('Jones', 'Cheese'),
+        ('Green', 'Beef'),
+        ('Green', 'Turkey'),
+        ('Green', 'Cheese');
+
+Query OK, 7 rows affected (0.00 sec)
+
+SELECT * FROM tastes;
+
++-------+---------+
+| name  | filling |
++-------+---------+
+| Brown | Beef    |
+| Brown | Ham     |
+| Brown | Turkey  |
+| Green | Beef    |
+| Green | Cheese  |
+| Green | Turkey  |
+| Jones | Cheese  |
++-------+---------+
+7 rows in set (0.00 sec)
+
+CREATE TABLE locations
+( lname VARCHAR(10),
+  phone VARCHAR(8),
+  address VARCHAR(20),
+  PRIMARY KEY(lname)
+);
+
+Query OK, 0 rows affected (0.02 sec)
+
+DESC locations;
++---------+-------------+------+-----+---------+-------+
+| Field   | Type        | Null | Key | Default | Extra |
++---------+-------------+------+-----+---------+-------+
+| lname   | varchar(10) | NO   | PRI | NULL    |       |
+| phone   | varchar(8)  | YES  |     | NULL    |       |
+| address | varchar(20) | YES  |     | NULL    |       |
++---------+-------------+------+-----+---------+-------+
+3 rows in set (0.00 sec)
+
+INSERT INTO locations
+VALUES ('Lincoln', '683 4523', 'Lincoln Place'),
+       ('O''Neill''s', '674 2134', 'Pearse St'),
+       ('Old Nag', '767 8132', 'Dame St'),
+       ('Buttery', '702 3421', 'College St');
+
+Query OK, 4 rows affected (0.00 sec)
+
+SELECT * FROM locations;
++-----------+----------+---------------+
+| lname     | phone    | address       |
++-----------+----------+---------------+
+| Buttery   | 702 3421 | College St    |
+| Lincoln   | 683 4523 | Lincoln Place |
+| O'Neill's | 674 2134 | Pearse St     |
+| Old Nag   | 767 8132 | Dame St       |
++-----------+----------+---------------+
+4 rows in set (0.00 sec)
+
+CREATE TABLE sandwiches
+( location VARCHAR(10),
+  bread VARCHAR(10),
+  filling VARCHAR(10),
+  price DECIMAL(3,2),
+  PRIMARY KEY(location, bread, filling),
+  FOREIGN KEY(location) REFERENCES locations (lname)
+);
+
+Query OK, 0 rows affected (0.01 sec)
+
++----------+---------------+------+-----+---------+-------+
+| Field    | Type          | Null | Key | Default | Extra |
++----------+---------------+------+-----+---------+-------+
+| location | varchar(10)   | NO   | PRI | NULL    |       |
+| bread    | varchar(10)   | NO   | PRI | NULL    |       |
+| filling  | varchar(10)   | NO   | PRI | NULL    |       |
+| price    | decimal(10,0) | YES  |     | NULL    |       |
++----------+---------------+------+-----+---------+-------+
+4 rows in set (0.00 sec)
+
+INSERT INTO sandwiches
+VALUES ('Lincoln' ,'Rye', 'Ham', 1.25),
+       ('O''Neill''s', 'White', 'Cheese', 1.20),
+       ('O''Neill''s', 'Whole', 'Ham', 1.25),
+       ('Old Nag', 'Rye', 'Beef', 1.35),
+       ('Buttery', 'White', 'Cheese', 1.00),
+       ('O''Neill''s', 'White', 'Turkey', 1.35),
+       ('Buttery', 'White', 'Ham', 1.10),
+       ('Lincoln', 'Rye', 'Beef', 1.35),
+       ('Lincoln', 'White', 'Ham', 1.30),
+       ('Old Nag', 'Rye', 'Ham', 1.40) ;
+
+Query OK, 10 rows affected, 9 warnings (0.01 sec)
+
+SELECT * FROM sandwiches;
+
++-----------+-------+---------+-------+
+| location  | bread | filling | price |
++-----------+-------+---------+-------+
+| Buttery   | White | Cheese  |  1.00 |
+| Buttery   | White | Ham     |  1.10 |
+| Lincoln   | Rye   | Beef    |  1.35 |
+| Lincoln   | Rye   | Ham     |  1.25 |
+| Lincoln   | White | Ham     |  1.30 |
+| O'Neill's | White | Cheese  |  1.20 |
+| O'Neill's | White | Turkey  |  1.35 |
+| O'Neill's | Whole | Ham     |  1.25 |
+| Old Nag   | Rye   | Beef    |  1.35 |
+| Old Nag   | Rye   | Ham     |  1.40 |
++-----------+-------+---------+-------+
+10 rows in set (0.00 sec)
+
+Query 1
+
+SELECT location AS places
+FROM sandwiches
+WHERE filling IN
+(
+  SELECT filling FROM tastes
+  WHERE name = 'Jones'
+);
+
++-----------+
+| places    |
++-----------+
+| Buttery   |
+| O'Neill's |
++-----------+
+
+Query 2
+
+SELECT location AS places
+FROM sandwiches s , tastes t
+WHERE s.filling = t.filling AND t.name = 'Jones' ;
+
++-----------+
+| places    |
++-----------+
+| Buttery   |
+| O'Neill's |
++-----------+
+2 rows in set (0.00 sec)
+
+3. Query 3
+
+SELECT location, COUNT(DISTINCT name)
+FROM sandwiches s, tastes t
+WHERE s.filling = t.filling
+GROUP BY location;
+
++-----------+----------------------+
+| location  | COUNT(DISTINCT name) |
++-----------+----------------------+
+| Buttery   |                    3 |
+| Lincoln   |                    2 |
+| O'Neill's |                    3 |
+| Old Nag   |                    2 |
++-----------+----------------------+
+4 rows in set (0.00 sec)
+

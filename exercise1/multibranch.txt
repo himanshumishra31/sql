@@ -1,0 +1,193 @@
+CREATE TABLE branch
+( BCode VARCHAR(2),
+  Librarian VARCHAR(20),
+  Address VARCHAR(20),
+  PRIMARY KEY (BCode)
+);
+Query OK, 0 rows affected (0.01 sec)
+
+DESC branch;
++-----------+-------------+------+-----+---------+-------+
+| Field     | Type        | Null | Key | Default | Extra |
++-----------+-------------+------+-----+---------+-------+
+| BCode     | varchar(2)  | NO   | PRI | NULL    |       |
+| Librarian | varchar(20) | YES  |     | NULL    |       |
+| Address   | varchar(20) | YES  |     | NULL    |       |
++-----------+-------------+------+-----+---------+-------+
+3 rows in set (0.00 sec)
+
+CREATE TABLE Titles
+( Title VARCHAR(20),
+  Author VARCHAR(20),
+  Publisher VARCHAR(20),
+  PRIMARY KEY(Title)
+);
+Query OK, 0 rows affected (0.01 sec)
+
+DESC Titles;
++-----------+-------------+------+-----+---------+-------+
+| Field     | Type        | Null | Key | Default | Extra |
++-----------+-------------+------+-----+---------+-------+
+| Title     | varchar(20) | NO   | PRI | NULL    |       |
+| Author    | varchar(20) | YES  |     | NULL    |       |
+| Publisher | varchar(20) | YES  |     | NULL    |       |
++-----------+-------------+------+-----+---------+-------+
+3 rows in set (0.00 sec)
+
+CREATE TABLE Holdings
+(
+  Branch VARCHAR(20),
+  Title VARCHAR(20),
+  `#copies` TINYINT(5),
+  PRIMARY KEY (Branch, Title),
+  FOREIGN KEY (Branch) REFERENCES branch(BCode),
+  FOREIGN KEY (Title) REFERENCES Titles(Title)
+);
+Query OK, 0 rows affected (0.02 sec)
+
+DESC holdings;
++---------+-------------+------+-----+---------+-------+
+| Field   | Type        | Null | Key | Default | Extra |
++---------+-------------+------+-----+---------+-------+
+| Branch  | varchar(20) | NO   | PRI | NULL    |       |
+| Title   | varchar(20) | NO   | PRI | NULL    |       |
+| #copies | tinyint(5)  | YES  |     | NULL    |       |
++---------+-------------+------+-----+---------+-------+
+3 rows in set (0.00 sec)
+
+INSERT INTO branch
+VALUES ('B1', 'John Smith', '2 Anglesea Rd'),
+       ('B2', 'Mary Jones', '34 Pearse St'),
+       ('B3', 'Francis Owens', 'Grange X');
+
+Query OK, 3 rows affected (0.00 sec)
+Records: 3  Duplicates: 0  Warnings: 0
+
+SELECT * FROM branch;
++-------+---------------+---------------+
+| BCode | Librarian     | Address       |
++-------+---------------+---------------+
+| B1    | John Smith    | 2 Anglesea Rd |
+| B2    | Mary Jones    | 34 Pearse St  |
+| B3    | Francis Owens | Grange X      |
++-------+---------------+---------------+
+3 rows in set (0.00 sec)
+
+INSERT INTO Titles
+VALUES ('Susannah', 'Ann Brown', 'Macmillan'),
+       ('How to Fish', 'Amy Fly', 'Stop Press'),
+       ('A History of Dublin', 'David Little', 'Wiley'),
+       ('Computers', 'Blaise Pascal', 'Applewoods'),
+       ('The Wife', 'Ann Brown', 'Macmillan');
+
+Query OK, 5 rows affected (0.01 sec)
+Records: 5  Duplicates: 0  Warnings: 0
+
+SELECT * FROM titles;
++---------------------+---------------+------------+
+| Title               | Author        | Publisher  |
++---------------------+---------------+------------+
+| A History of Dublin | David Little  | Wiley      |
+| Computers           | Blaise Pascal | Applewoods |
+| How to Fish         | Amy Fly       | Stop Press |
+| Susannah            | Ann Brown     | Macmillan  |
+| The Wife            | Ann Brown     | Macmillan  |
++---------------------+---------------+------------+
+5 rows in set (0.00 sec)
+
+INSERT INTO holdings
+VALUES ('B1', 'How to', 2),
+       ('B1', 'How to Fish', 2),
+       ('B1', 'A History of Dublin', 1),
+       ('B2', 'How to Fish', 4),
+       ('B2', 'Computers', 2),
+       ('B2', 'The Wife', 3),
+       ('B3', 'A History of Dublin', 1),
+       ('B3', 'Computers', 4),
+       ('B3', 'Susannah', 3),
+       ('B3', 'The Wife', 1);
+
+Query OK, 10 rows affected (0.00 sec)
+Records: 10  Duplicates: 0  Warnings: 0
+
+SELECT * FROM holdings;
++--------+---------------------+---------+
+| Branch | Title               | #copies |
++--------+---------------------+---------+
+| B1     | A History of Dublin |       1 |
+| B1     | How to Fish         |       2 |
+| B1     | Susannah            |       3 |
+| B2     | Computers           |       2 |
+| B2     | How to Fish         |       4 |
+| B2     | The Wife            |       3 |
+| B3     | A History of Dublin |       1 |
+| B3     | Computers           |       4 |
+| B3     | Susannah            |       3 |
+| B3     | The Wife            |       1 |
++--------+---------------------+---------+
+10 rows in set (0.00 sec)
+
+Query 1
+
+SELECT title
+FROM titles
+WHERE publisher = 'Macmillan';
++----------+
+| title    |
++----------+
+| Susannah |
+| The Wife |
++----------+
+2 rows in set (0.00 sec)
+
+Query 2
+
+SELECT DISTINCT branch
+FROM holdings
+WHERE title IN
+(
+  SELECT title
+  FROM titles
+  WHERE author = 'Ann Brown'
+);
+
++--------+
+| branch |
++--------+
+| B1     |
+| B3     |
+| B2     |
++--------+
+3 rows in set (0.00 sec)
+
+Query 3
+
+SELECT DISTINCT branch
+FROM holdings h, titles t
+WHERE h.title = t.title AND t.author = 'Ann Brown';
+
++--------+
+| branch |
++--------+
+| B1     |
+| B3     |
+| B2     |
++--------+
+3 rows in set (0.00 sec)
+
+Query 4
+
+SELECT branch , SUM(`#copies`) as 'Total Books'
+FROM holdings
+GROUP BY branch;
++--------+-------------+
+| branch | Total Books |
++--------+-------------+
+| B1     |           6 |
+| B2     |           9 |
+| B3     |           9 |
++--------+-------------+
+3 rows in set (0.00 sec)
+
+
+
