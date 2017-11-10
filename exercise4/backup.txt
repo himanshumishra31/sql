@@ -1,0 +1,24 @@
+
+# take backup
+mysqldump -u root -p exercise3 > backup.sql
+
+CREATE DATABASE backup;
+Query OK, 1 row affected (0.01 sec)
+mysql> use backup
+Database changed
+mysql> show tables;
+Empty set (0.00 sec)
+
+# restore backup
+mysql -u root -p sqltrack < backup.sql
+
+mysql> show tables;
++------------------+
+| Tables_in_backup |
++------------------+
+| articles         |
+| category         |
+| comments         |
+| users            |
++------------------+
+4 rows in set (0.00 sec)
