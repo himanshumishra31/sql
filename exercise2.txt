@@ -1,0 +1,12 @@
+CREATE DATABASE vtapp;
+Query OK, 1 row affected (0.01 sec)
+
+CREATE USER 'user@localhost'
+IDENTIFIED BY 'user_password';
+
+Query OK, 0 rows affected (0.01 sec)
+
+GRANT ALL PRIVILEGES
+ON vtapp.*
+TO 'user@localhost';
+Query OK, 0 rows affected (0.00 sec)
