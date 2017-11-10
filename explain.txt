@@ -1,0 +1,141 @@
+Q1: What do different columns in the output of EXPLAIN mean? What possible values can those have? What is the meaning of those values?
+
+mysql> EXPLAIN SELECT * FROM articles;
++----+-------------+----------+------------+------+---------------+------+---------+------+------+----------+-------+
+| id | select_type | table    | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra |
++----+-------------+----------+------------+------+---------------+------+---------+------+------+----------+-------+
+|  1 | SIMPLE      | articles | NULL       | ALL  | NULL          | NULL | NULL    | NULL |   10 |   100.00 | NULL  |
++----+-------------+----------+------------+------+---------------+------+---------+------+------+----------+-------+
+1 row in set, 1 warning (0.00 sec)
+
+id : A sequential identifier for the statement.
+select_type : type of select_type
+
+        Simple - indicates that the statement is without any subqueries or unions.
+        Primary - select is in outermost part of join query.
+        union - second or later select statement in a union.
+        subquery - first select in subquery
+
+table : name of the table or alias if given used in the query
+partitions : partition from which records are matched by query. NULL if no partitions are used.
+type : the join type
+
+        possible values
+        All : full table is scanned.
+        ref : reference is provided for join.
+
+possible_keys : keys that can be used by mysql to find the rows.
+key : actual key used by the mysql.
+key_len: indicates the length of index
+ref: keys or constants that are compared with index named in key.
+rows: number of rows examined.
+extra: This column contains additional information about how MySQL resolves the query
+
+Q2: We use EXPLAIN to optimize slow SQL queries used in our application. Lets say we have a comments table in our application that has a foreign key, user_id, referencing to users table. EXPLAINing the query that finds all the comments made by a user gives us following result.
+
+mysql> EXPLAIN SELECT * FROM comments WHERE user_id = 41;
+
++-------------+------+---------------+---------+-------+---------+-------------+
+| select_type | type | key | key_len | ref | rows | Extra |
++-------------+------+---------------+---------+-------+---------+-------------+
+| SIMPLE | ALL | NULL | NULL | NULL | 1002345 | Using where |
++-------------+------+---------------+---------+-------+---------+-------------+
+
+mysql> SELECT count(id) FROM comments;
+
++-----------+
+| count(id) |
++-----------+
+| 1002345 |
++-----------+
+
+2.1 The value under 'rows' column in the output of EXPLAIN query and SELECT query after it are same. What does it mean?
+
+Ans. It means that select statements scanned all the rows of the table i.e. 1002345 to get the rows where user_id = 41.
+
+2.2 Is the SELECT query optimal? If no, how do we optimize it?
+
+Ans. No it is not optimal. It can be optimize by adding an index on id column. After creating index the number of rows to be scanned will reduce.
+
+Q3. In Rails world, we have someting called polymorphic associations (http://guides.rubyonrails.org/association_basics.html#polymorphic-associations). Lets say in our web application, we can let users comment on photographs and articles. Some of rows in comments table are represented as following:
+
+mysql> SELECT * FROM comments LIMIT 5;
+
++----+------------------+----------------+---------+
+| id | commentable_type | commentable_id | user_id |
++----+------------------+----------------+---------+
+| 1 + Article | 1 | 1 |
++----+------------------+----------------+---------+
+| 2 + Photo | 1 | 1 |
++----+------------------+----------------+---------+
+| 3 + Photo | 2 | 2 |
++----+------------------+----------------+---------+
+| 4 + Photo | 2 | 2 |
++----+------------------+----------------+---------+
+| 5 + Article | 1 | 2 |
++----+------------------+----------------+---------+
+
+When we need to fetch comments of a user on a particular Article or Photo we form a query like:
+
+mysql> EXPLAIN SELECT * FROM comments WHERE commentable_id = 1 AND commentable_type = 'Article' AND user_id = 1;
+
++-------------+------+---------------+---------+-------+---------+-------------+
+| select_type | type | key | key_len | ref | rows | Extra |
++-------------+------+---------------+---------+-------+---------+-------------+
+| SIMPLE | ALL | NULL | NULL | NULL | 1000025 | Using where |
++-------------+------+---------------+---------+-------+---------+-------------+
+
+It seems that we do not have any index on any of the columns. And whole comments table is scanned to fetch those comments.
+
+3.1 We decide to index columns in comments table to optimize the SELECT query. What column(s) will you index in which order? Ask the exercise creator for a hint if you are confused.
+
+Ans. Indexing should be done in the order in which it is used in the where clause. Query should be
+      CREATE INDEX `comments_index` ON comments(commentable_id, commentable_type, user_id);
+
+
+4.1 EXPLAIN a SELECT query against one of your databases which employs an INNER JOIN between two tables. What does the output look like? What does the values under different columns mean? Do you get only one row in EXPLAIN's output?
+
+mysql> EXPLAIN
+    -> SELECT location AS places
+    -> FROM sandwiches
+    -> JOIN tastes
+    -> ON sandwiches.filling = tastes.filling
+    -> WHERE name = 'Jones';
++----+-------------+------------+------------+-------+---------------+---------+---------+-------+------+----------+-----------------------------------------------------------------+
+| id | select_type | table      | partitions | type  | possible_keys | key     | key_len | ref   | rows | filtered | Extra                                                           |
++----+-------------+------------+------------+-------+---------------+---------+---------+-------+------+----------+-----------------------------------------------------------------+
+|  1 | SIMPLE      | tastes     | NULL       | ref   | PRIMARY       | PRIMARY | 32      | const |    1 |   100.00 | Using index                                                     |
+|  1 | SIMPLE      | sandwiches | NULL       | index | NULL          | PRIMARY | 96      | NULL  |   10 |    10.00 | Using where; Using index; Using join buffer (Block Nested Loop) |
++----+-------------+------------+------------+-------+---------------+---------+---------+-------+------+----------+-----------------------------------------------------------------+
+2 rows in set, 1 warning (0.00 sec)
+
+
+
+
+4.2 Form the same select query in above question using a subquery instead of a JOIN. What does the EXPLAIN output look like now? Which query is better and why?
+
+mysql> explain SELECT location AS places
+    -> FROM sandwiches
+    -> WHERE filling IN
+    -> (
+    ->   SELECT filling FROM tastes
+    ->   WHERE name = 'Jones'
+    -> );
++----+-------------+------------+------------+-------+---------------+---------+---------+-------+------+----------+-----------------------------------------------------------------+
+| id | select_type | table      | partitions | type  | possible_keys | key     | key_len | ref   | rows | filtered | Extra                                                           |
++----+-------------+------------+------------+-------+---------------+---------+---------+-------+------+----------+-----------------------------------------------------------------+
+|  1 | SIMPLE      | tastes     | NULL       | ref   | PRIMARY       | PRIMARY | 32      | const |    1 |   100.00 | Using index                                                     |
+|  1 | SIMPLE      | sandwiches | NULL       | index | NULL          | PRIMARY | 96      | NULL  |   10 |    10.00 | Using where; Using index; Using join buffer (Block Nested Loop) |
++----+-------------+------------+------------+-------+---------------+---------+---------+-------+------+----------+-----------------------------------------------------------------+
+2 rows in set, 1 warning (0.00 sec)
+
+JOINs is better than subquery in most cases.
+
+In JOINs RDBMS can create an execution plan that is better for your query and can predict what data should be loaded to be processed and save time, unlike the sub-query where it will run all the queries and load all their data to do the processing.
+
+
+
+
+
+
+
