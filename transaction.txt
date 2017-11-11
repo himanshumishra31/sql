@@ -1,0 +1,140 @@
+mysql> CREATE DATABASE transaction;
+Query OK, 1 row affected (0.01 sec)
+
+mysql> USE transaction;
+
+mysql> CREATE TABLE users
+    -> (
+    ->     id INT(10) NOT NULL,
+    ->     name VARCHAR(100),
+    ->     email VARCHAR(100),
+    ->     account_no VARCHAR(100),
+    ->     PRIMARY KEY(account_no)
+    -> );
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> CREATE TABLE accounts
+    -> (
+    ->     id INT(10) NOT NULL,
+    ->     account_no varchar(100),
+    ->     balance FLOAT(10, 2),
+    ->     PRIMARY KEY(account_no),
+    ->     FOREIGN KEY(account_no) REFERENCES users(account_no) ON DELETE CASCADE ON UPDATE CASCADE
+    -> );
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> DESC users;
++------------+--------------+------+-----+---------+-------+
+| Field      | Type         | Null | Key | Default | Extra |
++------------+--------------+------+-----+---------+-------+
+| id         | int(10)      | NO   |     | NULL    |       |
+| name       | varchar(100) | YES  |     | NULL    |       |
+| email      | varchar(100) | YES  |     | NULL    |       |
+| account_no | varchar(100) | NO   | PRI | NULL    |       |
++------------+--------------+------+-----+---------+-------+
+4 rows in set (0.00 sec)
+
+mysql> desc accounts;
++------------+--------------+------+-----+---------+-------+
+| Field      | Type         | Null | Key | Default | Extra |
++------------+--------------+------+-----+---------+-------+
+| id         | int(10)      | NO   |     | NULL    |       |
+| account_no | varchar(100) | NO   | PRI | NULL    |       |
+| balance    | float(10,2)  | YES  |     | NULL    |       |
++------------+--------------+------+-----+---------+-------+
+3 rows in set (0.01 sec)
+
+INSERT INTO users
+    -> VALUES (1,'userA', 'userA@gmail.com', '123456789'),
+    -> (2,'userB', 'userB@gmail.com', '987654321');
+
+Query OK, 2 rows affected (0.00 sec)
+Records: 2  Duplicates: 0  Warnings: 0
+
+mysql> INSERT INTO accounts
+    -> VALUES (1,'123456789',2123.86),
+    -> (2,'987654321',23423.64);
+Query OK, 2 rows affected (0.00 sec)
+Records: 2  Duplicates: 0  Warnings: 0
+
+Q.i) userA is depositing 1000 Rs. his account
+
+mysql> START TRANSACTION;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> UPDATE accounts a, users u
+    -> SET a.balance = a.balance + 1000
+    -> WHERE a.account_no = u.account_no AND u.name= 'userA';
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> COMMIT;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> SELECT * FROM accounts;
++----+------------+----------+
+| id | account_no | balance  |
++----+------------+----------+
+|  1 | 123456789  |  3123.86 |
+|  2 | 987654321  | 23423.64 |
++----+------------+----------+
+2 rows in set (0.00 sec)
+
+Q ii) userA is withdrawing 500 Rs.
+
+mysql> UPDATE accounts a, users u
+    -> SET a.balance = a.balance - 500
+    -> WHERE a.account_no = u.account_no AND u.name= 'userA';
+
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> COMMIT;
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> SELECT * FROM accounts;
++----+------------+----------+
+| id | account_no | balance  |
++----+------------+----------+
+|  1 | 123456789  |  2623.86 |
+|  2 | 987654321  | 23423.64 |
++----+------------+----------+
+2 rows in set (0.00 sec)
+
+
+Q. iii) userA is transferring 200 Rs to userB's account
+
+mysql> START TRANSACTION;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> UPDATE accounts a, users u
+    -> SET a.balance = a.balance - 200
+    -> WHERE a.account_no = u.account_no AND u.name= 'userA';
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> savepoint balance_deducted;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> UPDATE accounts a, users u
+    -> SET a.balance = a.balance + 200
+    ->  WHERE a.account_no = u.account_no AND u.name= 'userB';
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> COMMIT;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> SELECT * FROM accounts;
++----+------------+----------+
+| id | account_no | balance  |
++----+------------+----------+
+|  1 | 123456789  |  2423.86 |
+|  2 | 987654321  | 23623.64 |
++----+------------+----------+
+2 rows in set (0.00 sec)
+
+
+
+
+
