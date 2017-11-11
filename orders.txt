@@ -1,0 +1,221 @@
+mysql> CREATE TABLE salespersons
+    -> ( id TINYINT(3) PRIMARY KEY,
+    ->   name VARCHAR(20),
+    ->   age TINYINT(3),
+    ->   salary INT(5)
+    -> );
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> DESC salespersons;
++--------+-------------+------+-----+---------+-------+
+| Field  | Type        | Null | Key | Default | Extra |
++--------+-------------+------+-----+---------+-------+
+| id     | tinyint(3)  | NO   | PRI | NULL    |       |
+| name   | varchar(20) | YES  |     | NULL    |       |
+| age    | tinyint(3)  | YES  |     | NULL    |       |
+| salary | int(5)      | YES  |     | NULL    |       |
++--------+-------------+------+-----+---------+-------+
+4 rows in set (0.00 sec)
+
+mysql> CREATE TABLE customers
+    -> ( id TINYINT(3) PRIMARY KEY,
+    ->   name VARCHAR(20),
+    ->   city VARCHAR(20),
+    ->   industry_type VARCHAR(1)
+    -> );
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> DESC customers;
++---------------+-------------+------+-----+---------+-------+
+| Field         | Type        | Null | Key | Default | Extra |
++---------------+-------------+------+-----+---------+-------+
+| id            | tinyint(3)  | NO   | PRI | NULL    |       |
+| name          | varchar(20) | YES  |     | NULL    |       |
+| city          | varchar(20) | YES  |     | NULL    |       |
+| industry_type | varchar(1)  | YES  |     | NULL    |       |
++---------------+-------------+------+-----+---------+-------+
+4 rows in set (0.00 sec)
+
+mysql> CREATE TABLE orders
+    -> ( id TINYINT(3) PRIMARY KEY,
+    ->   order_date DATE,
+    ->   cust_id TINYINT(3),
+    ->   salesperson_id TINYINT(3),
+    ->   amount INT,
+    ->   FOREIGN KEY(cust_id) REFERENCES customers (id),
+    ->   FOREIGN KEY(salesperson_id) REFERENCES salespersons (id)
+    -> );
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> DESC orders;
++----------------+------------+------+-----+---------+-------+
+| Field          | Type       | Null | Key | Default | Extra |
++----------------+------------+------+-----+---------+-------+
+| id             | tinyint(3) | NO   | PRI | NULL    |       |
+| order_date     | date       | YES  |     | NULL    |       |
+| cust_id        | tinyint(3) | YES  | MUL | NULL    |       |
+| salesperson_id | tinyint(3) | YES  | MUL | NULL    |       |
+| amount         | int(11)    | YES  |     | NULL    |       |
++----------------+------------+------+-----+---------+-------+
+5 rows in set (0.01 sec)
+
+mysql> INSERT INTO salespersons
+    -> VALUES (1,'Abe', 61,140000),
+    -> (2,'Bob',34,44000),
+    -> (3,'Chris',34,40000),
+    -> (4,'Dan',41,52000),
+    -> (5,'Ken',57,115000),
+    -> (6,'Joe',38,38000);
+Query OK, 6 rows affected (0.00 sec)
+Records: 6  Duplicates: 0  Warnings: 0
+
+mysql> INSERT INTO customers
+    -> VALUES (1,'Samsonic','Pleasant','J'),
+    -> (2,'Panasung','Oaktown','J'),
+    -> (3,'Samony','Jackson','B'),
+    -> (4,'Orange','Jackson','B');
+Query OK, 4 rows affected (0.00 sec)
+Records: 4  Duplicates: 0  Warnings: 0
+
+mysql> INSERT INTO orders
+    -> VALUES (1,2013-01-08,1,2,540),
+    -> (2,'2013-01-13',1,5,1800),
+    -> (3,'2013-01-17',4,1,460),
+    -> (4,'2013-02-02',3,2,2400),
+    -> (5,'2013-02-03',2,4,600),
+    -> (6,'2013-02-03',2,4,720),
+    -> (7,'2013-03-05',4,4,150);
+
+Query OK, 7 rows affected (0.00 sec)
+Records: 7  Duplicates: 0  Warnings: 0
+
+Q1. The details of all salespeople that have an order with Samsonic.
+
+mysql> SELECT  s.id, s.name, s.age, s.salary
+    -> FROM salespersons s, customers c, orders o
+    -> WHERE c.id = o.cust_id
+    -> AND c.name = 'Samsonic'
+    -> AND c.salesperson_id = s.id;
+
++----+------+------+--------+
+| id | name | age  | salary |
++----+------+------+--------+
+|  2 | Bob  |   34 |  44000 |
+|  5 | Ken  |   57 | 115000 |
++----+------+------+--------+
+2 rows in set (0.00 sec)
+
+Q2. The names of salespeople that have 2 or more orders.
+
+mysql> SELECT s.name, COUNT(*) AS number_of_orders
+    -> FROM salespersons s, orders o
+    -> WHERE s.id = o.salesperson_id
+    -> GROUP BY o.salesperson_id
+    -> HAVING COUNT(*) > 1;
+
++------+------------------+
+| name | number_of_orders |
++------+------------------+
+| Bob  |                2 |
+| Dan  |                3 |
++------+------------------+
+2 rows in set (0.00 sec)
+
+Q3.  The names of salespeople that have not got any order for last 15 days, also show details of their last orders.
+
+mysql> set @date = '2013-03-10';
+Query OK, 0 rows affected (0.00 sec)
+
+// because all the order dates were of 2013.
+
+mysql> SELECT o.* , s.name
+    -> FROM orders o, salespersons s
+    -> WHERE o.salesperson_id = s.id AND DATEDIFF(@date, o.order_date) > 15
+    -> GROUP BY salesperson_id DESC;
++----+------------+---------+----------------+--------+------+
+| id | order_date | cust_id | salesperson_id | amount | name |
++----+------------+---------+----------------+--------+------+
+|  2 | 2013-01-13 |       1 |              5 |   1800 | Ken  |
+|  5 | 2013-02-03 |       2 |              4 |    600 | Dan  |
+|  1 | 2013-01-08 |       1 |              2 |    540 | Bob  |
+|  3 | 2013-01-17 |       4 |              1 |    460 | Abe  |
++----+------------+---------+----------------+--------+------+
+4 rows in set (0.00 sec)
+
+Q4. Find the names of the salespeople whose order has the maximum amount as of now(Do this without using MAX Or MIN, do this using joins and consider possibility of more than one person having the highest amount)
+
+// INSERT INTO orders
+// VALUES (8,'2013-06-03',2,3,2400);
+
+
+mysql> SELECT @max:= amount FROM orders o, salespersons s
+    -> WHERE o.salesperson_id = s.id
+    -> ORDER BY amount DESC
+    -> LIMIT 1;
++---------------+
+| @max:= amount |
++---------------+
+|          2400 |
++---------------+
+1 row in set (0.00 sec)
+
+mysql> select @max;
++------+
+| @max |
++------+
+| 2400 |
++------+
+1 row in set (0.00 sec)
+
+mysql> SELECT name, amount
+    -> FROM salespersons s, orders o
+    -> WHERE s.id = o.salesperson_id AND o.amount = @max;
++-------+--------+
+| name  | amount |
++-------+--------+
+| Bob   |   2400 |
+| Chris |   2400 |
++-------+--------+
+2 rows in set (0.00 sec)
+
+Q5. Find the industry type all salespeople have got order from in a single column like :
+    Name Indsutries
+    Bob J,B
+    and so on..(with no repetitions like J,J,B in Industries column)
+
+mysql> SELECT CONCAT(s.name, ' ', GROUP_CONCAT(DISTINCT industry_type SEPARATOR ',')) as 'SALESPERSON WITH CUSTOMER'
+    -> FROM orders o, salespersons s, customers c
+    -> WHERE o.salesperson_id = s.id AND o.cust_id = c.id
+    -> GROUP BY s.name;
++---------------------------+
+| SALESPERSON WITH CUSTOMER |
++---------------------------+
+| Abe B                     |
+| Bob J,B                   |
+| Chris J                   |
+| Dan J,B                   |
+| Ken J                     |
++---------------------------+
+5 rows in set (0.00 sec)
+
+
+Q6. In the last query, get the total amount of salespeople they have got orders for
+
+mysql> SELECT SUM(amount) AS total_amount , s.name
+    -> FROM salespersons s, orders o
+    -> WHERE s.id = o.salesperson_id
+    -> GROUP BY s.name;
+
++--------------+-------+
+| total_amount | name  |
++--------------+-------+
+|          460 | Abe   |
+|         2940 | Bob   |
+|         2400 | Chris |
+|         1470 | Dan   |
+|         1800 | Ken   |
++--------------+-------+
+5 rows in set (0.00 sec)
+
+
+
