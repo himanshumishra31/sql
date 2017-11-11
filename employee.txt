@@ -1,0 +1,193 @@
+mysql> CREATE DATABASE comission;
+Query OK, 1 row affected (0.00 sec)
+
+mysql> use comission;
+Database changed
+
+mysql> CREATE TABLE departments
+    -> ( id TINYINT(3) PRIMARY KEY,
+    ->   name VARCHAR(20)
+    -> );
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> DESC departments;
++-------+-------------+------+-----+---------+-------+
+| Field | Type        | Null | Key | Default | Extra |
++-------+-------------+------+-----+---------+-------+
+| id    | tinyint(3)  | NO   | PRI | NULL    |       |
+| name  | varchar(20) | YES  |     | NULL    |       |
++-------+-------------+------+-----+---------+-------+
+2 rows in set (0.00 sec)
+
+mysql> CREATE TABLE employees
+    -> ( id TINYINT(3) PRIMARY KEY,
+    ->   name VARCHAR(20) NOT NULL,
+    ->   salary INT,
+    ->   department_id TINYINT(3),
+    ->   FOREIGN KEY (department_id) REFERENCES departments (id)
+    -> );
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> DESC employees;
++---------------+-------------+------+-----+---------+-------+
+| Field         | Type        | Null | Key | Default | Extra |
++---------------+-------------+------+-----+---------+-------+
+| id            | tinyint(3)  | NO   | PRI | NULL    |       |
+| name          | varchar(20) | NO   |     | NULL    |       |
+| salary        | int(11)     | YES  |     | NULL    |       |
+| department_id | tinyint(3)  | YES  | MUL | NULL    |       |
++---------------+-------------+------+-----+---------+-------+
+4 rows in set (0.00 sec)
+
+mysql> CREATE TABLE commissions
+    -> ( id TINYINT(3) PRIMARY KEY,
+    ->   employee_id TINYINT(3),
+    ->   commission_amount INT,
+    ->   FOREIGN KEY(employee_id) REFERENCES employees (id)
+    -> );
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> DESC commissions;
++-------------------+------------+------+-----+---------+-------+
+| Field             | Type       | Null | Key | Default | Extra |
++-------------------+------------+------+-----+---------+-------+
+| id                | tinyint(3) | NO   | PRI | NULL    |       |
+| employee_id       | tinyint(3) | YES  | MUL | NULL    |       |
+| commission_amount | int(11)    | YES  |     | NULL    |       |
++-------------------+------------+------+-----+---------+-------+
+3 rows in set (0.00 sec)
+
+
+mysql> INSERT INTO departments
+    -> VALUES (1,'Banking'),
+    -> (2,'Insurances'),
+    -> (3,'Services');
+Query OK, 3 rows affected (0.00 sec)
+Records: 3  Duplicates: 0  Warnings: 0
+
+mysql> SELECT * FROM departments;
++----+------------+
+| id | name       |
++----+------------+
+|  1 | Banking    |
+|  2 | Insurances |
+|  3 | Services   |
++----+------------+
+3 rows in set (0.00 sec)
+
+mysql> INSERT INTO employees
+    -> VALUES (1,'Chris Gayle', 1000000,1),
+    -> (2,'Michael Clarke', 800000, 2),
+    -> (3,'Rahul Dravid', 700000, 1),
+    -> (4,'Ricky Pointing', 600000, 2),
+    -> (5,'Albie Morkel', 650000, 2),
+    -> (6,'Wasim Akram', 750000, 3);
+Query OK, 6 rows affected (0.00 sec)
+Records: 6  Duplicates: 0  Warnings: 0
+
+mysql> SELECT * FROM employees;
++----+----------------+---------+---------------+
+| id | name           | salary  | department_id |
++----+----------------+---------+---------------+
+|  1 | Chris Gayle    | 1000000 |             1 |
+|  2 | Michael Clarke |  800000 |             2 |
+|  3 | Rahul Dravid   |  700000 |             1 |
+|  4 | Ricky Pointing |  600000 |             2 |
+|  5 | Albie Morkel   |  650000 |             2 |
+|  6 | Wasim Akram    |  750000 |             3 |
++----+----------------+---------+---------------+
+6 rows in set (0.00 sec)
+mysql> INSERT INTO commissions
+    -> VALUES (1,1,5000),
+    -> (2,2,3000),
+    -> (3,3,4000),
+    -> (4,1,4000),
+    -> (5,2,3000),
+    -> (6,4,2000),
+    -> (7,5,1000),
+    -> (8,6,5000);
+Query OK, 8 rows affected (0.00 sec)
+Records: 8  Duplicates: 0  Warnings: 0
+
+mysql> SELECT * FROM commissions;
++----+-------------+-------------------+
+| id | employee_id | commission_amount |
++----+-------------+-------------------+
+|  1 |           1 |              5000 |
+|  2 |           2 |              3000 |
+|  3 |           3 |              4000 |
+|  4 |           1 |              4000 |
+|  5 |           2 |              3000 |
+|  6 |           4 |              2000 |
+|  7 |           5 |              1000 |
+|  8 |           6 |              5000 |
++----+-------------+-------------------+
+8 rows in set (0.00 sec)
+
+i. Find the employee who gets the highest total commission.
+
+mysql> SELECT employee_id , SUM(commission_amount) AS 'total amount'
+    -> FROM commissions
+    -> GROUP BY employee_id,
+    -> ORDER BY 'total amount'
+    -> LIMIT 1;
+
++-------------+--------------+
+| employee_id | total amount |
++-------------+--------------+
+|           1 |         9000 |
++-------------+--------------+
+1 row in set (0.00 sec)
+
+ii. Find employee with 4th Highest salary from employee table.
+
+mysql> SELECT name , salary
+    -> FROM employees
+    -> ORDER BY salary DESC
+    -> LIMIT 1 OFFSET 3;
+
++--------------+--------+
+| name         | salary |
++--------------+--------+
+| Rahul Dravid | 700000 |
++--------------+--------+
+1 row in set (0.01 sec)
+
+iii. Find department that is giving highest commission.
+
+mysql> SELECT SUM(commission_amount) AS 'department commission', d.name
+    -> FROM employees e ,commissions c, departments d
+    -> WHERE e.id = c.employee_id AND e.department_id = d.id
+    -> GROUP BY department_id
+    -> ORDER BY 'department commission' DESC
+    -> LIMIT 1;
++-----------------------+---------+
+| department commission | name    |
++-----------------------+---------+
+|                 13000 | Banking |
++-----------------------+---------+
+1 row in set (0.00 sec)
+
+iv. Find employees getting commission more than 3000
+    Display Output in following pattern:
+      Chris Gayle, Rahul Dravid  4000
+
+mysql> SELECT CONCAT(GROUP_CONCAT(name SEPARATOR ',') , ' ' , commission_amount) AS 'Employees with commission more than 3000'
+      -> FROM employees e, commissions c
+      -> WHERE e.id = c.employee_id
+      -> GROUP BY commission_amount
+      -> HAVING commission_amount > 3000;
+
++------------------------------------------+
+| Employees with commission more than 3000 |
++------------------------------------------+
+| Rahul Dravid,Chris Gayle 4000            |
+| Wasim Akram,Chris Gayle 5000             |
++------------------------------------------+
+2 rows in set (0.00 sec)
+
+
+
+
+
+
