@@ -290,16 +290,17 @@ mysql> SELECT a.id AS article_id_without_comments
 QUERY 4
 // Write a query to select article which has maximum comments
 
-mysql> SELECT COUNT(*) AS number_of_comments, article_id AS article_with_maximum_comments
-    -> FROM comments
-    -> GROUP BY article_id
-    -> ORDER BY number_of_comments desc
+mysql> SELECT a.id, count(*) AS number_of_comments
+    -> FROM articles a, comments c
+    -> WHERE a.id = c.article_id
+    -> GROUP BY c.article_id
+    -> ORDER BY number_of_comments DESC
     -> LIMIT 1;
-+--------------------+-------------------------------+
-| number_of_comments | article_with_maximum_comments |
-+--------------------+-------------------------------+
-|                  2 |                             2 |
-+--------------------+-------------------------------+
++----+--------------------+
+| id | number_of_comments |
++----+--------------------+
+|  2 |                  3 |
++----+--------------------+
 1 row in set (0.00 sec)
 
 Query 5
