@@ -152,8 +152,7 @@ mysql> SELECT name, amount
     -> FROM salespersons s, orders o
     -> WHERE s.id = o.salesperson_id AND o.amount =
     -> (
-    ->   SELECT amount FROM orders o, salespersons s
-    ->   WHERE o.salesperson_id = s.id
+    ->   SELECT amount FROM orders o
     ->   ORDER BY amount DESC
     ->   LIMIT 1
     -> );
