@@ -126,32 +126,64 @@ mysql> SELECT * FROM commissions;
 
 i. Find the employee who gets the highest total commission.
 
-mysql> SELECT employee_id , SUM(commission_amount) AS 'total amount'
+mysql> CREATE VIEW total_commission AS
+    -> SELECT SUM(commission_amount) AS total, employee_id
     -> FROM commissions
-    -> GROUP BY employee_id,
-    -> ORDER BY 'total amount'
-    -> LIMIT 1;
+    -> GROUP BY employee_id
+    -> ORDER BY total desc;
+Query OK, 0 rows affected (0.00 sec)
 
-+-------------+--------------+
-| employee_id | total amount |
-+-------------+--------------+
-|           1 |         9000 |
-+-------------+--------------+
+mysql> SELECT *
+    -> FROM total_commission;
++-------+-------------+
+| total | employee_id |
++-------+-------------+
+|  9000 |           1 |
+|  6000 |           2 |
+|  5000 |           6 |
+|  4000 |           3 |
+|  2000 |           4 |
+|  1000 |           5 |
++-------+-------------+
+6 rows in set (0.00 sec)
+
+mysql> SELECT * FROM employees
+    -> WHERE id =
+    -> ( SELECT employee_id
+    ->   FROM total_commission
+    ->   WHERE total =
+    ->   ( SELECT max(total)
+    ->     FROM total_commission
+    ->   )
+    -> );
++----+-------------+---------+---------------+
+| id | name        | salary  | department_id |
++----+-------------+---------+---------------+
+|  1 | Chris Gayle | 1000000 |             1 |
++----+-------------+---------+---------------+
 1 row in set (0.00 sec)
 
 ii. Find employee with 4th Highest salary from employee table.
 
-mysql> SELECT name , salary
-    -> FROM employees
-    -> ORDER BY salary DESC
-    -> LIMIT 1 OFFSET 3;
+mysql> INSERT INTO employees
+    -> VALUE (7, 'sachin', 700000,2);
 
-+--------------+--------+
-| name         | salary |
-+--------------+--------+
-| Rahul Dravid | 700000 |
-+--------------+--------+
-1 row in set (0.01 sec)
+
+mysql> SELECT *
+    -> FROM employees
+    -> WHERE salary =
+    -> (
+    ->   SELECT DISTINCT(salary)
+    ->   FROM employees
+    ->   ORDER BY salary DESC
+    ->   LIMIT 1 OFFSET 3
+    -> );
++----+--------------+--------+---------------+
+| id | name         | salary | department_id |
++----+--------------+--------+---------------+
+|  3 | Rahul Dravid | 700000 |             1 |
+|  7 | sachin       | 700000 |             2 |
++----+--------------+--------+---------------+
 
 iii. Find department that is giving highest commission.
 
