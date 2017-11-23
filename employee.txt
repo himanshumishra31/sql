@@ -5,7 +5,7 @@ mysql> use comission;
 Database changed
 
 mysql> CREATE TABLE departments
-    -> ( id TINYINT(3) PRIMARY KEY,
+    -> ( id TINYINT(3) PRIMARY KEY AUTO_INCREMENT,
     ->   name VARCHAR(20)
     -> );
 Query OK, 0 rows affected (0.01 sec)
@@ -20,7 +20,7 @@ mysql> DESC departments;
 2 rows in set (0.00 sec)
 
 mysql> CREATE TABLE employees
-    -> ( id TINYINT(3) PRIMARY KEY,
+    -> ( id TINYINT(3) PRIMARY KEY AUTO_INCREMENT,
     ->   name VARCHAR(20) NOT NULL,
     ->   salary INT,
     ->   department_id TINYINT(3),
@@ -40,7 +40,7 @@ mysql> DESC employees;
 4 rows in set (0.00 sec)
 
 mysql> CREATE TABLE commissions
-    -> ( id TINYINT(3) PRIMARY KEY,
+    -> ( id TINYINT(3) PRIMARY KEY AUTO_INCREMENT,
     ->   employee_id TINYINT(3),
     ->   commission_amount INT,
     ->   FOREIGN KEY(employee_id) REFERENCES employees (id)
@@ -59,9 +59,9 @@ mysql> DESC commissions;
 
 
 mysql> INSERT INTO departments
-    -> VALUES (1,'Banking'),
-    -> (2,'Insurances'),
-    -> (3,'Services');
+    -> VALUES ('Banking'),
+    -> ('Insurances'),
+    -> ('Services');
 Query OK, 3 rows affected (0.00 sec)
 Records: 3  Duplicates: 0  Warnings: 0
 
@@ -76,12 +76,12 @@ mysql> SELECT * FROM departments;
 3 rows in set (0.00 sec)
 
 mysql> INSERT INTO employees
-    -> VALUES (1,'Chris Gayle', 1000000,1),
-    -> (2,'Michael Clarke', 800000, 2),
-    -> (3,'Rahul Dravid', 700000, 1),
-    -> (4,'Ricky Pointing', 600000, 2),
-    -> (5,'Albie Morkel', 650000, 2),
-    -> (6,'Wasim Akram', 750000, 3);
+    -> VALUES ('Chris Gayle', 1000000,1),
+    -> ('Michael Clarke', 800000, 2),
+    -> ('Rahul Dravid', 700000, 1),
+    -> ('Ricky Pointing', 600000, 2),
+    -> ('Albie Morkel', 650000, 2),
+    -> ('Wasim Akram', 750000, 3);
 Query OK, 6 rows affected (0.00 sec)
 Records: 6  Duplicates: 0  Warnings: 0
 
@@ -98,14 +98,14 @@ mysql> SELECT * FROM employees;
 +----+----------------+---------+---------------+
 6 rows in set (0.00 sec)
 mysql> INSERT INTO commissions
-    -> VALUES (1,1,5000),
-    -> (2,2,3000),
-    -> (3,3,4000),
-    -> (4,1,4000),
-    -> (5,2,3000),
-    -> (6,4,2000),
-    -> (7,5,1000),
-    -> (8,6,5000);
+    -> VALUES (1,5000),
+    -> (2,3000),
+    -> (3,4000),
+    -> (1,4000),
+    -> (2,3000),
+    -> (4,2000),
+    -> (5,1000),
+    -> (6,5000);
 Query OK, 8 rows affected (0.00 sec)
 Records: 8  Duplicates: 0  Warnings: 0
 
@@ -133,34 +133,16 @@ mysql> CREATE VIEW total_commission AS
     -> ORDER BY total desc;
 Query OK, 0 rows affected (0.00 sec)
 
-mysql> SELECT *
-    -> FROM total_commission;
-+-------+-------------+
-| total | employee_id |
-+-------+-------------+
-|  9000 |           1 |
-|  6000 |           2 |
-|  5000 |           6 |
-|  4000 |           3 |
-|  2000 |           4 |
-|  1000 |           5 |
-+-------+-------------+
-6 rows in set (0.00 sec)
+mysql> SELECT e.name, c.total
+    -> FROM total_commission c, employees e
+    -> WHERE c.employee_id = e.id
+    -> LIMIT 1;
 
-mysql> SELECT * FROM employees
-    -> WHERE id =
-    -> ( SELECT employee_id
-    ->   FROM total_commission
-    ->   WHERE total =
-    ->   ( SELECT max(total)
-    ->     FROM total_commission
-    ->   )
-    -> );
-+----+-------------+---------+---------------+
-| id | name        | salary  | department_id |
-+----+-------------+---------+---------------+
-|  1 | Chris Gayle | 1000000 |             1 |
-+----+-------------+---------+---------------+
++-------------+-------+
+| name        | total |
++-------------+-------+
+| Chris Gayle |  9000 |
++-------------+-------+
 1 row in set (0.00 sec)
 
 ii. Find employee with 4th Highest salary from employee table.
