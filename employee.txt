@@ -148,7 +148,7 @@ mysql> SELECT e.name, c.total
 ii. Find employee with 4th Highest salary from employee table.
 
 mysql> INSERT INTO employees
-    -> VALUE (7, 'sachin', 700000,2);
+    -> VALUE ('sachin', 700000,2);
 
 
 mysql> SELECT *
